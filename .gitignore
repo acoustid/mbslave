@@ -6,5 +6,4 @@
 /.mypy_cache/
 /dist/
 mbdata.egg-info/
-settings.py
 venv/
