@@ -608,7 +608,7 @@ def create_schemas(config: Config) -> None:
 
 
 def run_script(script: str) -> None:
-    subprocess.run(['bash', '-euxc', script], check=True)
+    p = subprocess.run(script, check=True, shell=True)
 
 
 def run_sql_script(name: str, superuser: bool = False) -> None:
