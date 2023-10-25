@@ -260,7 +260,7 @@ def load_tar(source: str, fileobj: BytesIO, db, config, ignored_schemas, ignored
 
 
 def mbslave_import_main(config, args):
-    db = connect_db(config, superuser=True, set_search_path=False)
+    db = connect_db(config, superuser=True, set_search_path=True)
 
     for source in args.sources:
         with ExitStack() as exit_stack:
