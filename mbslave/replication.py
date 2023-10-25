@@ -587,8 +587,6 @@ def create_database(config: Config) -> None:
     cursor = db.cursor()
     cursor.execute(f"CREATE DATABASE {config.database.name} WITH OWNER {config.database.user}")
     cursor.execute(f"ALTER DATABASE {config.database.name} SET timezone TO 'UTC'")
-    if 'musicbrainz' not in config.schemas.ignored_schemas:
-        cursor.execute(f"ALTER DATABASE {config.database.name} SET search_path TO \"$USER\", {config.schemas.name('musicbrainz')}, public")
 
 
 def create_schemas(config: Config) -> None:
