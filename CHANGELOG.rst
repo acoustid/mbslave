@@ -1,3 +1,10 @@
+Version 28.0.0
+==============
+
+- Schema change 28.
+- Use MusicBrainz replication packets v2.
+- Windows support.
+
 Version 27.1.0
 ==============
 
