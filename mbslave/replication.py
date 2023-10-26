@@ -260,7 +260,7 @@ def load_tar(source: str, fileobj: BytesIO, db, config, ignored_schemas, ignored
 
 
 def mbslave_import_main(config, args):
-    db = config.database.connect_db(superuser=True, set_search_path=False)
+    db = connect_db(config, superuser=True, set_search_path=True)
 
     for source in args.sources:
         with ExitStack() as exit_stack:
@@ -608,7 +608,7 @@ def create_schemas(config: Config) -> None:
 
 
 def run_script(script: str) -> None:
-    subprocess.run(['bash', '-euxc', script], check=True)
+    subprocess.run(script, check=True, shell=True)
 
 
 def run_sql_script(name: str, superuser: bool = False) -> None:
