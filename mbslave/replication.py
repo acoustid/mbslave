@@ -582,6 +582,7 @@ def create_schemas(config: Config) -> None:
         'statistics',
         'documentation',
         'wikidocs',
+        'dbmirror2'
     ]
     for schema in schemas:
         if schema in config.schemas.ignored_schemas:
@@ -669,6 +670,10 @@ def mbslave_init_main(config: Config, args: argparse.Namespace) -> None:
 
         # triggers
         ('musicbrainz', 'CreateMirrorOnlyTriggers.sql'),
+
+        # replication
+        ('musicbrainz', 'ReplicationSetup.sql'),
+        ('dbmirror2', 'dbmirror2/ReplicationSetup.sql'),
 
     ]
 
