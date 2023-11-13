@@ -9,7 +9,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_release_mirror()
 RETURNS trigger AS $$
@@ -31,7 +31,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_release_mirror()
 RETURNS trigger AS $$
@@ -40,7 +40,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_ins_release_event_mirror()
 RETURNS trigger AS $$
@@ -52,7 +52,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_release_event_mirror()
 RETURNS trigger AS $$
@@ -67,7 +67,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_release_event_mirror()
 RETURNS trigger AS $$
@@ -79,7 +79,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_ins_release_group_mirror()
 RETURNS trigger AS $$
@@ -87,7 +87,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_release_group_mirror()
 RETURNS trigger AS $$
@@ -101,7 +101,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_release_group_mirror()
 RETURNS trigger AS $$
@@ -109,7 +109,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.id);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_release_group_meta_mirror()
 RETURNS trigger AS $$
@@ -123,7 +123,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_ins_release_group_secondary_type_join_mirror()
 RETURNS trigger AS $$
@@ -131,7 +131,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_release_group_secondary_type_join_mirror()
 RETURNS trigger AS $$
@@ -139,7 +139,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_ins_release_label_mirror()
 RETURNS trigger AS $$
@@ -147,7 +147,7 @@ BEGIN
     INSERT INTO artist_release_pending_update VALUES (NEW.release);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_release_label_mirror()
 RETURNS trigger AS $$
@@ -157,7 +157,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_release_label_mirror()
 RETURNS trigger AS $$
@@ -165,7 +165,7 @@ BEGIN
     INSERT INTO artist_release_pending_update VALUES (OLD.release);
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_ins_track_mirror()
 RETURNS trigger AS $$
@@ -182,7 +182,7 @@ BEGIN
     );
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_upd_track_mirror()
 RETURNS trigger AS $$
@@ -203,7 +203,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION a_del_track_mirror()
 RETURNS trigger AS $$
@@ -220,6 +220,6 @@ BEGIN
     );
     RETURN NULL;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE 'plpgsql' SET search_path = musicbrainz, public;
 
 COMMIT;
