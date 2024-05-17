@@ -7,8 +7,8 @@ Development Setup
 
 Clone the repository and setup virtualenv::
 
-    git clone git@github.com:lalinsky/mbdata.git
-    cd mbdata/
+    git clone https://github.com/acoustid/mbslave.git
+    cd mbslave/
     virtualenv -p python3 venv
     source venv/bin/activate
     pip install poetry
@@ -17,15 +17,14 @@ Clone the repository and setup virtualenv::
 Updating SQL files and models
 =============================
 
-Run these scripts to update SQL files and rebuild SQLAlchemy models from them::
+Run these scripts to update SQL files::
 
     ./scripts/update_sql.sh
-    ./scripts/update_models.sh
 
 Release a new version
 =====================
 
-1. Change the version number in ``mbdata/__init__.py``.
+1. Change the version number in ``mbslave/__init__.py``.
 
 2. Add notes to ``CHANGELOG.rst``
 
@@ -37,4 +36,4 @@ Release a new version
 
     rm -rf dist/
     python setup.py sdist
-    twine upload dist/mbdata-*.tar.gz
+    twine upload dist/mbslave-*.tar.gz
