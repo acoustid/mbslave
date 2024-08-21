@@ -1,3 +1,8 @@
+Version 29.1.0
+==============
+
+- Add prometheus metrics.
+
 Version 29.0.0
 ==============
 
