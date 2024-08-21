@@ -18,7 +18,14 @@ from typing import List, Optional, Iterable
 import configparser as ConfigParser
 from contextlib import ExitStack
 
+import prometheus_client
+
 logger = logging.getLogger(__name__)
+
+
+CURRENT_SCHEMA_SEQUENCE = prometheus_client.Gauge('mbslave_current_schema_sequence', 'Current schema sequence number')
+CURRENT_REPLICATION_REQUENCE = prometheus_client.Gauge('mbslave_current_replication_sequence', 'Current replication sequence number')
+PROCESSED_PACKETS = prometheus_client.Counter('mbslave_processed_packets_total', 'Total number of processed packets')
 
 
 def str_to_bool(x):
@@ -492,16 +499,22 @@ def mbslave_sync_main(config: Config, args: argparse.Namespace) -> None:
 
     hook_class = ReplicationHook
 
+    if args.prometheus_server_port:
+        prometheus_client.start_http_server(args.prometheus_server_port)
+
     while True:
         cursor = db.cursor()
         cursor.execute("SELECT current_schema_sequence, current_replication_sequence FROM %s.replication_control" % config.schemas.name('musicbrainz'))
         schema_seq, replication_seq = cursor.fetchone()
+        CURRENT_SCHEMA_SEQUENCE.set(schema_seq)
+        CURRENT_REPLICATION_REQUENCE.set(replication_seq)
         replication_seq += 1
         hook = hook_class(config, db, config)
         try:
             with download_packet(base_url, token, replication_seq) as packet:
                 try:
                     process_tar(packet, db, config, ignored_schemas, ignored_tables, schema_seq, replication_seq, hook)
+                    PROCESSED_PACKETS.inc()
                 except MismatchedSchemaError:
                     if not args.keep_running:
                         raise
@@ -755,6 +768,7 @@ def main():
     parser_sync = subparsers.add_parser('sync')
     parser_sync.add_argument('-r', '--keep-running', dest='keep_running', action='store_true',
                              help='keep running until the script is explicitly terminated')
+    parser_sync.add_argument('--prometheus-server-port', type=int)
     parser_sync.set_defaults(func=mbslave_sync_main)
 
     parser_remap_schema = subparsers.add_parser('remap-schema')
