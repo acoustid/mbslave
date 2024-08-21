@@ -7,9 +7,10 @@ authors = ["Lukáš Lalinský <lalinsky@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 psycopg2 = "^2.9.2"
 six = "^1.16.0"
+prometheus-client = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.0"
