@@ -8,7 +8,7 @@ MusicBrainz Database Mirror
     :target: https://badge.fury.io/py/mbslave
 
 This repository now contains a collection of scripts for managing a
-replica of the MusicBrainz database. 
+replica of the MusicBrainz database.
 
 The main motivation for these scripts is to be able to customize
 your database. If you don't need such customizations, it might be
@@ -81,6 +81,14 @@ Schema Upgrade
 When the MusicBrainz database schema changes, the replication will stop working.
 This is usually announced on the `MusicBrainz blog <http://blog.musicbrainz.org/>`__.
 When it happens, you need to upgrade the database.
+
+Release 2025-05-19 (30)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the upgrade scripts::
+
+    mbslave psql -f updates/schema-change/30.all.sql
+    echo 'UPDATE replication_control SET current_schema_sequence = 30;' | mbslave psql
 
 Release 2024-05-13 (29)
 ~~~~~~~~~~~~~~~~~~~~~~~
