@@ -36,7 +36,7 @@ There are two ways to configure the application.
 
         export MBSLAVE_CONFIG=/usr/local/etc/mbslave.conf
 
-2. Alternativelly, you can use using environment variables::
+2. Alternatively, you can use environment variables::
 
         export MBSLAVE_DB_HOST=127.0.0.1
         export MBSLAVE_DB_PORT=5432
@@ -45,6 +45,14 @@ There are two ways to configure the application.
         export MBSLAVE_DB_PASSWORD=XXX
         export MBSLAVE_DB_ADMIN_USER=postgres
         export MBSLAVE_DB_ADMIN_PASSWORD=XXX
+
+Be aware, that configuring a different value for `db.user` or `schemas.musicbrainz` might require to configure a
+custom `search_path` for the user (or database): By default, postgres sets the search_path to `"$user", public`.
+If both is `musicbrainz` everything works, if they differ, you might run into errors when running `mbslave sync` as
+triggers can't lookup functions properly. One way to solve this is to set the search path for your custom user to the
+schema configured for musicbrainz::
+
+  ALTER USER myuser SET search_path TO musicbrainz, public;
 
 Database Setup
 ==============
