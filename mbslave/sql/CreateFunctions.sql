@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION _median(INTEGER[]) RETURNS INTEGER AS $$
   LIMIT 1
   -- Subtracting (n + 1) % 2 creates a left bias
   OFFSET greatest(0, floor((select count(*) FROM q) / 2.0) - ((select count(*) + 1 FROM q) % 2));
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE;
 
 CREATE AGGREGATE median(INTEGER) (
   SFUNC=array_append,
@@ -50,7 +50,7 @@ BEGIN
     value = value || lpad(to_hex(ceil(random() * 255)::int), 2, '0');
     RETURN value::uuid;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION from_hex(t text) RETURNS integer
     AS $$
@@ -61,7 +61,7 @@ BEGIN
         RETURN r.hex;
     END LOOP;
 END
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public IMMUTABLE STRICT;
+$$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
 -- NameSpace_URL = '6ba7b8119dad11d180b400c04fd430c8'
 CREATE OR REPLACE FUNCTION generate_uuid_v3(namespace varchar, name varchar) RETURNS uuid
@@ -84,7 +84,7 @@ BEGIN
     value = value || substr(bytes, 1+2*10, 12);
     return value::uuid;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public IMMUTABLE STRICT;
+$$ LANGUAGE 'plpgsql' IMMUTABLE STRICT;
 
 
 CREATE OR REPLACE FUNCTION inc_ref_count(tbl varchar, row_id integer, val integer) RETURNS void AS $$
@@ -94,7 +94,7 @@ BEGIN
     EXECUTE 'UPDATE ' || tbl || ' SET ref_count = ref_count + ' || val || ' WHERE id = ' || row_id;
     RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION dec_ref_count(tbl varchar, row_id integer, val integer) RETURNS void AS $$
 DECLARE
@@ -109,7 +109,7 @@ BEGIN
     EXECUTE 'UPDATE ' || tbl || ' SET ref_count = ref_count - ' || val || ' WHERE id = ' || row_id;
     RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION integer_date(year SMALLINT, month SMALLINT, day SMALLINT)
 RETURNS INTEGER AS $$
@@ -126,7 +126,7 @@ RETURNS INTEGER AS $$
             )::INTEGER
         END
     )
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE PARALLEL SAFE;
+$$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 
 -----------------------------------------------------------------------
 -- area triggers
@@ -149,7 +149,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- artist triggers
@@ -161,7 +161,7 @@ BEGIN
     INSERT INTO artist_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_artist_attribute_type_allows_text()
@@ -180,7 +180,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- artist_credit triggers
@@ -197,7 +197,7 @@ BEGIN
     -- artist_release_group.
     RAISE EXCEPTION 'Cannot update artist_credit_name';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- editor triggers
@@ -211,7 +211,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- event triggers
@@ -234,7 +234,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- event triggers
@@ -246,7 +246,7 @@ BEGIN
     INSERT INTO event_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- instrument triggers
@@ -261,7 +261,7 @@ BEGIN
     ) INSERT INTO link_creditable_attribute_type (attribute_type) SELECT id FROM inserted_rows;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION a_upd_instrument() RETURNS trigger AS $$
 BEGIN
@@ -272,7 +272,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION a_del_instrument() RETURNS trigger AS $$
 BEGIN
@@ -283,7 +283,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_instrument_attribute_type_allows_text()
@@ -302,7 +302,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- label triggers
@@ -313,7 +313,7 @@ BEGIN
     INSERT INTO label_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_label_attribute_type_allows_text()
@@ -332,7 +332,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- medium triggers
@@ -355,7 +355,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- place triggers
@@ -367,7 +367,7 @@ BEGIN
     INSERT INTO place_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_place_attribute_type_allows_text()
@@ -386,7 +386,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- recording triggers
@@ -395,7 +395,7 @@ $$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
 CREATE OR REPLACE FUNCTION median_track_length(recording_id integer)
 RETURNS integer AS $$
   SELECT median(track.length) FROM track WHERE recording = $1;
-$$ LANGUAGE sql SET search_path = musicbrainz, public;
+$$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION b_upd_recording() RETURNS TRIGGER AS $$
 BEGIN
@@ -409,7 +409,7 @@ BEGIN
   NEW.last_updated = now();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_recording() RETURNS trigger AS $$
 BEGIN
@@ -417,7 +417,7 @@ BEGIN
     INSERT INTO recording_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_recording() RETURNS trigger AS $$
 BEGIN
@@ -427,14 +427,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_recording() RETURNS trigger AS $$
 BEGIN
     PERFORM dec_ref_count('artist_credit', OLD.artist_credit, 1);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_recording_attribute_type_allows_text()
@@ -453,7 +453,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- release triggers
@@ -471,7 +471,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_release() RETURNS trigger AS $$
 BEGIN
@@ -516,7 +516,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_release() RETURNS trigger AS $$
 BEGIN
@@ -528,7 +528,40 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION a_upd_release_group_primary_type_mirror()
+RETURNS trigger AS $$
+BEGIN
+    -- DO NOT modify any replicated tables in this function; it's used
+    -- by a trigger on mirrors.
+    IF (NEW.child_order IS DISTINCT FROM OLD.child_order)
+    THEN
+        INSERT INTO artist_release_group_pending_update (
+            SELECT id FROM release_group
+            WHERE release_group.type = OLD.id
+        );
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION a_upd_release_group_secondary_type_mirror()
+RETURNS trigger AS $$
+BEGIN
+    -- DO NOT modify any replicated tables in this function; it's used
+    -- by a trigger on mirrors.
+    IF (NEW.child_order IS DISTINCT FROM OLD.child_order)
+    THEN
+        INSERT INTO artist_release_group_pending_update (
+            SELECT release_group
+            FROM release_group_secondary_type_join
+            WHERE secondary_type = OLD.id
+        );
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_release_group_secondary_type_join()
 RETURNS trigger AS $$
@@ -536,7 +569,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_release_group_secondary_type_join()
 RETURNS trigger AS $$
@@ -544,7 +577,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.release_group);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_release_label()
 RETURNS trigger AS $$
@@ -552,7 +585,7 @@ BEGIN
     INSERT INTO artist_release_pending_update VALUES (NEW.release);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_release_label()
 RETURNS trigger AS $$
@@ -562,7 +595,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_release_label()
 RETURNS trigger AS $$
@@ -570,7 +603,7 @@ BEGIN
     INSERT INTO artist_release_pending_update VALUES (OLD.release);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_release_attribute_type_allows_text()
@@ -589,7 +622,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- release_group triggers
@@ -602,7 +635,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_release_group() RETURNS trigger AS $$
 BEGIN
@@ -619,7 +652,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_release_group() RETURNS trigger AS $$
 BEGIN
@@ -627,7 +660,7 @@ BEGIN
     INSERT INTO artist_release_group_pending_update VALUES (OLD.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION b_upd_release_group_secondary_type_join() RETURNS trigger AS $$
 BEGIN
@@ -639,7 +672,7 @@ BEGIN
     -- artist_release_group up-to-date.
     RAISE EXCEPTION 'Cannot update release_group_secondary_type_join';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_release_group_attribute_type_allows_text()
@@ -656,7 +689,7 @@ RETURNS trigger AS $$
     ELSE RETURN NEW;
     END IF;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- series triggers
@@ -679,7 +712,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- track triggers
@@ -703,7 +736,7 @@ BEGIN
     );
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_track() RETURNS trigger AS $$
 BEGIN
@@ -749,7 +782,7 @@ BEGIN
     PERFORM materialise_recording_length(NEW.recording);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_track() RETURNS trigger AS $$
 BEGIN
@@ -769,7 +802,7 @@ BEGIN
     );
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- work triggers
@@ -780,7 +813,7 @@ BEGIN
     INSERT INTO work_meta (id) VALUES (NEW.id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -- Ensure attribute type allows free text if free text is added
 CREATE OR REPLACE FUNCTION ensure_work_attribute_type_allows_text()
@@ -798,7 +831,7 @@ BEGIN
         RETURN NEW;
     END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- alternative tracklist triggers
@@ -811,7 +844,7 @@ BEGIN
     END IF;
     RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION dec_nullable_artist_credit(row_id integer) RETURNS void AS $$
 BEGIN
@@ -820,14 +853,14 @@ BEGIN
     END IF;
     RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_alternative_release_or_track() RETURNS trigger AS $$
 BEGIN
     PERFORM inc_nullable_artist_credit(NEW.artist_credit);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_alternative_release_or_track() RETURNS trigger AS $$
 BEGIN
@@ -837,21 +870,21 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_alternative_release_or_track() RETURNS trigger AS $$
 BEGIN
     PERFORM dec_nullable_artist_credit(OLD.artist_credit);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_alternative_medium_track() RETURNS trigger AS $$
 BEGIN
     PERFORM inc_ref_count('alternative_track', NEW.alternative_track, 1);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_alternative_medium_track() RETURNS trigger AS $$
 BEGIN
@@ -861,14 +894,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_alternative_medium_track() RETURNS trigger AS $$
 BEGIN
     PERFORM dec_ref_count('alternative_track', OLD.alternative_track, 1);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- lastupdate triggers
@@ -879,7 +912,7 @@ BEGIN
     NEW.last_updated = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_edit() RETURNS trigger AS $$
 BEGIN
@@ -889,14 +922,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION b_ins_edit_materialize_status() RETURNS trigger AS $$
 BEGIN
     NEW.status = (SELECT status FROM edit WHERE id = NEW.edit);
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 ------------------------
 -- Collection deletion and hiding triggers
@@ -916,7 +949,7 @@ RETURNS trigger AS $$
       RETURN NEW;
     END IF;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION del_collection_sub_on_delete()
 RETURNS trigger AS $$
@@ -928,7 +961,7 @@ RETURNS trigger AS $$
 
     RETURN OLD;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION del_collection_sub_on_private()
 RETURNS trigger AS $$
@@ -946,7 +979,7 @@ RETURNS trigger AS $$
 
     RETURN NEW;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION restore_collection_sub_on_public()
 RETURNS trigger AS $$
@@ -961,7 +994,7 @@ RETURNS trigger AS $$
 
     RETURN NULL;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 ------------------------
 -- CD Lookup
@@ -1005,7 +1038,7 @@ BEGIN
 
     RETURN str::cube;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public IMMUTABLE;
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION create_bounding_cube(durations INTEGER[], fuzzy INTEGER) RETURNS cube AS $$
 DECLARE
@@ -1059,7 +1092,7 @@ BEGIN
 
     RETURN str::cube;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public IMMUTABLE;
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
 
 -------------------------------------------------------------------
 -- Maintain musicbrainz.release_first_release_date
@@ -1087,7 +1120,7 @@ BEGIN
         )
         ORDER BY release, year NULLS LAST, month NULLS LAST, day NULLS LAST';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
 
 CREATE OR REPLACE FUNCTION set_release_first_release_date(release_id INTEGER)
 RETURNS VOID AS $$
@@ -1104,7 +1137,7 @@ BEGIN
 
   INSERT INTO artist_release_pending_update VALUES (release_id);
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
 
 -------------------------------------------------------------------
 -- Maintain release_group_meta.first_release_date
@@ -1117,9 +1150,10 @@ BEGIN
                                   first_release_date_day = first.day
       FROM (
         SELECT rd.year, rd.month, rd.day
-        FROM release
+        FROM release_group
+        LEFT JOIN release ON release.release_group = release_group.id
         LEFT JOIN release_first_release_date rd ON (rd.release = release.id)
-        WHERE release.release_group = release_group_id
+        WHERE release_group.id = release_group_id
         ORDER BY
           rd.year NULLS LAST,
           rd.month NULLS LAST,
@@ -1129,7 +1163,7 @@ BEGIN
     WHERE id = release_group_id;
     INSERT INTO artist_release_group_pending_update VALUES (release_group_id);
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -------------------------------------------------------------------
 -- Maintain musicbrainz.recording_first_release_date
@@ -1149,7 +1183,7 @@ BEGIN
             rd.month NULLS LAST,
             rd.day NULLS LAST';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
 
 CREATE OR REPLACE FUNCTION set_recordings_first_release_dates(recording_ids INTEGER[])
 RETURNS VOID AS $$
@@ -1164,7 +1198,19 @@ BEGIN
     format('track.recording = any(%L)', recording_ids)
   );
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
+
+CREATE OR REPLACE FUNCTION set_mediums_recordings_first_release_dates(medium_ids INTEGER[])
+RETURNS VOID AS $$
+BEGIN
+  PERFORM set_recordings_first_release_dates((
+    SELECT array_agg(recording)
+      FROM track
+     WHERE track.medium = any(medium_ids)
+  ));
+  RETURN;
+END;
+$$ LANGUAGE 'plpgsql' STRICT;
 
 CREATE OR REPLACE FUNCTION set_releases_recordings_first_release_dates(release_ids INTEGER[])
 RETURNS VOID AS $$
@@ -1177,7 +1223,19 @@ BEGIN
   ));
   RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
+
+CREATE OR REPLACE FUNCTION a_upd_medium_mirror()
+RETURNS trigger AS $$
+BEGIN
+    -- DO NOT modify any replicated tables in this function; it's used
+    -- by a trigger on mirrors.
+    IF NEW.release IS DISTINCT FROM OLD.release THEN
+        PERFORM set_mediums_recordings_first_release_dates(ARRAY[OLD.id]);
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_ins_release_event()
 RETURNS TRIGGER AS $$
@@ -1196,7 +1254,7 @@ BEGIN
 
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_upd_release_event()
 RETURNS TRIGGER AS $$
@@ -1227,7 +1285,7 @@ BEGIN
 
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION a_del_release_event()
 RETURNS TRIGGER AS $$
@@ -1246,13 +1304,13 @@ BEGIN
 
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION deny_special_purpose_deletion() RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION 'Attempted to delete a special purpose row';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -------------------------------------------------------------------
 -- Ratings
@@ -1284,7 +1342,7 @@ BEGIN
     entity_type::TEXT || '_rating_raw'
   ) USING entity_id;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_aggregate_rating_for_raw_insert()
 RETURNS trigger AS $$
@@ -1297,7 +1355,7 @@ BEGIN
   PERFORM update_aggregate_rating(entity_type, new_entity_id);
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_aggregate_rating_for_raw_update()
 RETURNS trigger AS $$
@@ -1319,7 +1377,7 @@ BEGIN
   END IF;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_aggregate_rating_for_raw_delete()
 RETURNS trigger AS $$
@@ -1332,7 +1390,7 @@ BEGIN
   PERFORM update_aggregate_rating(entity_type, old_entity_id);
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION delete_ratings(enttype TEXT, ids INTEGER[])
 RETURNS TABLE(editor INT, rating SMALLINT) AS $$
@@ -1346,7 +1404,7 @@ BEGIN
          USING ids;
     RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -------------------------------------------------------------------
 -- Prevent link attributes being used on links that don't support them
@@ -1366,7 +1424,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 --------------------------------------------------------------------------------
 -- Remove unused link rows when a relationship is changed
@@ -1390,53 +1448,17 @@ BEGIN
 
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION delete_unused_url(ids INTEGER[])
 RETURNS VOID AS $$
-DECLARE
-  clear_up INTEGER[];
 BEGIN
-  SELECT ARRAY(
-    SELECT id FROM url url_row WHERE id = any(ids)
-    EXCEPT
-    SELECT url FROM edit_url JOIN edit ON (edit.id = edit_url.edit) WHERE edit.status = 1
-    EXCEPT
-    SELECT entity1 FROM l_area_url
-    EXCEPT
-    SELECT entity1 FROM l_artist_url
-    EXCEPT
-    SELECT entity1 FROM l_event_url
-    EXCEPT
-    SELECT entity1 FROM l_genre_url
-    EXCEPT
-    SELECT entity1 FROM l_instrument_url
-    EXCEPT
-    SELECT entity1 FROM l_label_url
-    EXCEPT
-    SELECT entity1 FROM l_mood_url
-    EXCEPT
-    SELECT entity1 FROM l_place_url
-    EXCEPT
-    SELECT entity1 FROM l_recording_url
-    EXCEPT
-    SELECT entity1 FROM l_release_url
-    EXCEPT
-    SELECT entity1 FROM l_release_group_url
-    EXCEPT
-    SELECT entity1 FROM l_series_url
-    EXCEPT
-    SELECT entity1 FROM l_url_url
-    EXCEPT
-    SELECT entity0 FROM l_url_url
-    EXCEPT
-    SELECT entity0 FROM l_url_work
-  ) INTO clear_up;
-
-  DELETE FROM url_gid_redirect WHERE new_id = any(clear_up);
-  DELETE FROM url WHERE id = any(clear_up);
+  DELETE FROM url_gid_redirect WHERE new_id = any(ids);
+  DELETE FROM url WHERE id = any(ids);
+EXCEPTION
+  WHEN foreign_key_violation THEN RETURN;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION remove_unused_url()
 RETURNS TRIGGER AS $$
@@ -1455,7 +1477,7 @@ BEGIN
 
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION simplify_search_hints()
 RETURNS trigger AS $$
@@ -1474,7 +1496,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION end_date_implies_ended()
 RETURNS trigger AS $$
@@ -1487,7 +1509,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION end_area_implies_ended()
 RETURNS trigger AS $$
@@ -1498,7 +1520,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION delete_orphaned_recordings()
 RETURNS TRIGGER
@@ -1559,15 +1581,15 @@ AS $$
 
     RETURN NULL;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION padded_by_whitespace(TEXT) RETURNS boolean AS $$
   SELECT btrim($1) <> $1;
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE;
+$$ LANGUAGE SQL IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION controlled_for_whitespace(TEXT) RETURNS boolean AS $$
   SELECT NOT padded_by_whitespace($1);
-$$ LANGUAGE sql IMMUTABLE SET search_path = musicbrainz, public;
+$$ LANGUAGE SQL IMMUTABLE SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION update_aggregate_tag_count(entity_type taggable_entity_type, entity_id INTEGER, tag_id INTEGER, count_change SMALLINT)
 RETURNS VOID AS $$
@@ -1583,7 +1605,7 @@ BEGIN
     entity_type::TEXT
   ) USING entity_id, tag_id, count_change;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION delete_unused_aggregate_tag(entity_type taggable_entity_type, entity_id INTEGER, tag_id INTEGER)
 RETURNS VOID AS $$
@@ -1606,7 +1628,7 @@ BEGIN
     entity_type::TEXT || '_tag_raw'
   ) USING entity_id, tag_id;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_tag_counts_for_raw_insert()
 RETURNS trigger AS $$
@@ -1620,7 +1642,7 @@ BEGIN
   UPDATE tag SET ref_count = ref_count + 1 WHERE id = NEW.tag;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_tag_counts_for_raw_update()
 RETURNS trigger AS $$
@@ -1647,7 +1669,7 @@ BEGIN
   END IF;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION update_tag_counts_for_raw_delete()
 RETURNS trigger AS $$
@@ -1662,7 +1684,7 @@ BEGIN
   UPDATE tag SET ref_count = ref_count - 1 WHERE id = OLD.tag;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION delete_unused_tag(tag_id INT)
 RETURNS void AS $$
@@ -1671,7 +1693,7 @@ RETURNS void AS $$
   EXCEPTION
     WHEN foreign_key_violation THEN RETURN;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION trg_delete_unused_tag()
 RETURNS trigger AS $$
@@ -1679,7 +1701,7 @@ RETURNS trigger AS $$
     PERFORM delete_unused_tag(NEW.id);
     RETURN NULL;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION trg_delete_unused_tag_ref()
 RETURNS trigger AS $$
@@ -1687,7 +1709,7 @@ RETURNS trigger AS $$
     PERFORM delete_unused_tag(OLD.tag);
     RETURN NULL;
   END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION inserting_edits_requires_confirmed_email_address()
 RETURNS trigger AS $$
@@ -1702,7 +1724,7 @@ BEGIN
     RETURN NEW;
   END IF;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION deny_deprecated_links()
 RETURNS trigger AS $$
@@ -1713,7 +1735,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION check_has_dates()
 RETURNS trigger AS $$
@@ -1731,7 +1753,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION materialise_recording_length(recording_id INT)
 RETURNS void as $$
@@ -1741,14 +1763,14 @@ BEGIN
   WHERE recording.id = recording_id
     AND recording.length IS DISTINCT FROM track.median;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION track_count_matches_cdtoc(medium, int) RETURNS boolean AS $$
     SELECT $1.track_count = $2 + COALESCE(
         (SELECT count(*) FROM track
          WHERE medium = $1.id AND (position = 0 OR is_data_track = true)
     ), 0);
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE;
+$$ LANGUAGE SQL IMMUTABLE;
 
 COMMIT;
 
@@ -1766,7 +1788,7 @@ BEGIN
     );
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- Text search helpers
@@ -1774,7 +1796,7 @@ $$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
 
 CREATE OR REPLACE FUNCTION mb_lower(input text) RETURNS text AS $$
   SELECT lower(input COLLATE musicbrainz.musicbrainz);
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE PARALLEL SAFE STRICT;
+$$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE STRICT;
 
 CREATE OR REPLACE FUNCTION mb_simple_tsvector(input text) RETURNS tsvector AS $$
   -- The builtin 'simple' dictionary, which the mb_simple text search
@@ -1782,7 +1804,7 @@ CREATE OR REPLACE FUNCTION mb_simple_tsvector(input text) RETURNS tsvector AS $$
   -- for us, but internally it hardcodes DEFAULT_COLLATION_OID; therefore
   -- we first lowercase the input string ourselves using mb_lower.
   SELECT to_tsvector('musicbrainz.mb_simple', musicbrainz.mb_lower(input));
-$$ LANGUAGE sql SET search_path = musicbrainz, public IMMUTABLE PARALLEL SAFE STRICT;
+$$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE STRICT;
 
 -----------------------------------------------------------------------
 -- Edit data helpers
@@ -1817,7 +1839,7 @@ BEGIN
     END CASE;
     RETURN '';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public IMMUTABLE PARALLEL SAFE STRICT;
+$$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE STRICT;
 
 -----------------------------------------------------------------------
 -- Maintain musicbrainz.artist_release
@@ -1844,7 +1866,7 @@ BEGIN
                 (CASE r.barcode WHEN '' THEN '0' ELSE r.barcode END),
                 '[^0-9]+', '', 'g'
             ), 18)::BIGINT AS barcode,
-            left(r.name, 1)::CHAR(1) AS sort_character,
+            r.name,
             r.id
         FROM (
             SELECT FALSE AS is_track_artist, racn.artist, r.id AS release
@@ -1868,7 +1890,7 @@ BEGIN
     $SQL$
     USING release_id;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION apply_artist_release_pending_updates()
 RETURNS trigger AS $$
@@ -1908,7 +1930,7 @@ BEGIN
 
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- Maintain musicbrainz.artist_release_group
@@ -1928,7 +1950,12 @@ BEGIN
             a_rg.artist,
             -- Withdrawn releases were once official by definition
             bool_and(r.status IS NOT NULL AND r.status != 1 AND r.status != 5),
+            rgpt.child_order::SMALLINT,
             rg.type::SMALLINT,
+            array_agg(
+                DISTINCT rgst.child_order ORDER BY rgst.child_order)
+                FILTER (WHERE rgst.child_order IS NOT NULL
+            )::SMALLINT[],
             array_agg(
                 DISTINCT st.secondary_type ORDER BY st.secondary_type)
                 FILTER (WHERE st.secondary_type IS NOT NULL
@@ -1938,7 +1965,7 @@ BEGIN
                 rgm.first_release_date_month,
                 rgm.first_release_date_day
             ),
-            left(rg.name, 1)::CHAR(1),
+            rg.name,
             rg.id
         FROM (
             SELECT FALSE AS is_track_artist, rgacn.artist, rg.id AS release_group
@@ -1954,15 +1981,17 @@ BEGIN
         JOIN release_group rg ON rg.id = a_rg.release_group
         LEFT JOIN release r ON r.release_group = rg.id
         JOIN release_group_meta rgm ON rgm.id = rg.id
+        LEFT JOIN release_group_primary_type rgpt ON rgpt.id = rg.type
         LEFT JOIN release_group_secondary_type_join st ON st.release_group = rg.id
+        LEFT JOIN release_group_secondary_type rgst ON rgst.id = st.secondary_type
     $SQL$ || (CASE WHEN release_group_id IS NULL THEN '' ELSE 'WHERE rg.id = $1' END) ||
     $SQL$
-        GROUP BY a_rg.is_track_artist, a_rg.artist, rgm.id, rg.id
+        GROUP BY a_rg.is_track_artist, a_rg.artist, rgm.id, rg.id, rgpt.child_order
         ORDER BY a_rg.artist, rg.id, a_rg.is_track_artist
     $SQL$
     USING release_group_id;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION apply_artist_release_group_pending_updates()
 RETURNS trigger AS $$
@@ -2002,7 +2031,7 @@ BEGIN
 
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- Relationship triggers
@@ -2019,7 +2048,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION a_upd_l_area_area_mirror() RETURNS trigger AS $$
 DECLARE
@@ -2043,7 +2072,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION a_del_l_area_area_mirror() RETURNS trigger AS $$
 DECLARE
@@ -2056,7 +2085,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION b_upd_link() RETURNS trigger AS $$
 BEGIN
@@ -2069,28 +2098,28 @@ BEGIN
     -- area_containment.
     RAISE EXCEPTION 'link rows are immutable';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION b_upd_link_attribute() RETURNS trigger AS $$
 BEGIN
     -- Refer to b_upd_link.
     RAISE EXCEPTION 'link_attribute rows are immutable';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION b_upd_link_attribute_credit() RETURNS trigger AS $$
 BEGIN
     -- Refer to b_upd_link.
     RAISE EXCEPTION 'link_attribute_credit rows are immutable';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION b_upd_link_attribute_text_value() RETURNS trigger AS $$
 BEGIN
     -- Refer to b_upd_link.
     RAISE EXCEPTION 'link_attribute_text_value rows are immutable';
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE 'plpgsql';
 
 -----------------------------------------------------------------------
 -- Maintain musicbrainz.area_containment
@@ -2131,7 +2160,7 @@ BEGIN
     $SQL$
     USING part_of_area_link_type_id, descendant_area_ids;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 -- Returns a set of area_containment rows that cover the entire descendant
 -- hierarchy for parent_area_ids.  If NULL is passed, the entire
@@ -2168,7 +2197,7 @@ BEGIN
     $SQL$
     USING part_of_area_link_type_id, parent_area_ids;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_area_containment_mirror(
     parent_ids INTEGER[], -- entity0 of area-area "part of"
@@ -2216,6 +2245,6 @@ BEGIN
       ) area_hierarchy
      ORDER BY descendant, parent, depth;
 END;
-$$ LANGUAGE plpgsql SET search_path = musicbrainz, public;
+$$ LANGUAGE plpgsql;
 
 -- vi: set ts=4 sw=4 et :

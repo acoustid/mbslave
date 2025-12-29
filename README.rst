@@ -20,7 +20,6 @@ Installation
 You need to have `Python 3.x <https://python.org/>`__ installed on your system.
 You can use `pipx <https://pypa.github.io/pipx/>`__ to install this package::
 
-       sudo apt install python3 pipx
        pipx install 'mbslave'
 
 There are two ways to configure the application.
@@ -174,3 +173,5 @@ data import. You can temporarily map all schemas to e.g. "musicbrainz_NEW", impo
 database there and then rename it::
 
     echo 'BEGIN; ALTER SCHEMA musicbrainz RENAME TO musicbrainz_OLD; ALTER SCHEMA musicbrainz_NEW RENAME TO musicbrainz; COMMIT;' | mbslave psql -S
+
+.. 

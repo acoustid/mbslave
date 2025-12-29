@@ -11,8 +11,9 @@ python = "^3.8"
 psycopg2 = "^2.9.2"
 six = "^1.16.0"
 prometheus-client = "^0.20.0"
+tqdm = "^4.64.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "^5.0.0"
 psycopg2 = "^2.9.2"
 sqlparse = "^0.4.2"

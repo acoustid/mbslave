@@ -8,7 +8,7 @@ import psycopg2
 import argparse
 import logging
 from io import BytesIO
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from urllib.parse import urljoin
 from urllib.error import HTTPError
 import tempfile
@@ -19,8 +19,20 @@ import configparser as ConfigParser
 from contextlib import ExitStack
 
 import prometheus_client
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
+
+
+class TqdmFileReader(object):
+    def __init__(self, fileobj, pbar):
+        self.fileobj = fileobj
+        self.pbar = pbar
+
+    def read(self, size=-1):
+        data = self.fileobj.read(size)
+        self.pbar.update(len(data))
+        return data
 
 
 CURRENT_SCHEMA_SEQUENCE = prometheus_client.Gauge('mbslave_current_schema_sequence', 'Current schema sequence number')
@@ -38,7 +50,7 @@ def read_env_item(obj, key, name, convert=None):
         value = os.environ[name]
     if name + '_FILE' in os.environ:
         value = open(os.environ[name + '_FILE']).read().strip()
-    if value is not None:
+    if value:
         if convert is not None:
             value = convert(value)
         setattr(obj, key, value)
@@ -238,44 +250,119 @@ def check_table_exists(db, schema, table):
     return True
 
 
+def download_url(url: str, dest_path: str) -> None:
+    headers = {}
+    file_mode = 'wb'
+    resume_size = 0
+    if os.path.exists(dest_path):
+        resume_size = os.path.getsize(dest_path)
+        headers['Range'] = 'bytes=%d-' % resume_size
+        file_mode = 'ab'
+
+    request = Request(url, headers=headers)
+    try:
+        response = urlopen(request)
+    except HTTPError as e:
+        if e.code == 416:  # Range Not Satisfiable
+            # Check if the file is already complete
+            with urlopen(url) as r:
+                total_size = int(r.info().get('Content-Length', 0))
+                if resume_size >= total_size:
+                    logger.info("File %s already downloaded", dest_path)
+                    return
+            raise
+        raise
+
+    content_length = response.info().get('Content-Length')
+    total_size = int(content_length) if content_length else None
+
+    if response.getcode() == 206:
+        if total_size is not None:
+            total_size += resume_size
+    else:
+        file_mode = 'wb'
+        resume_size = 0
+
+    with open(dest_path, file_mode) as f:
+        with tqdm(total=total_size, unit='B', unit_scale=True, desc=os.path.basename(url), initial=resume_size, leave=False) as pbar:
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+                pbar.update(len(chunk))
+
+
 def load_tar(source: str, fileobj: BytesIO, db, config, ignored_schemas, ignored_tables):
     logger.info("Importing data from %s", source)
     tar = tarfile.open(fileobj=fileobj, mode='r|*')
     cursor = db.cursor()
-    for member in tar:
-        if not member.name.startswith('mbdump/'):
-            continue
-        name = member.name.split('/')[1].replace('_sanitised', '')
-        schema, table = parse_name(config, name)
-        fulltable = fqn(schema, table)
-        if schema in ignored_schemas:
-            logger.info("Ignoring %s", name)
-            continue
-        if table in ignored_tables:
-            logger.info("Ignoring %s", name)
-            continue
-        if not check_table_exists(db, schema, table):
-            logger.info("Skipping %s (table %s does not exist)", name, fulltable)
-            continue
-        cursor.execute("SELECT 1 FROM %s LIMIT 1" % fulltable)
-        if cursor.fetchone():
-            logger.info("Skipping %s (table %s already contains data)", name, fulltable)
-            continue
-        logger.info("Loading %s to %s", name, fulltable)
-        cursor.copy_expert('COPY {} FROM STDIN'.format(fulltable), tar.extractfile(member))
+    try:
+        cursor.execute("SET session_replication_role = 'replica'")
+    except psycopg2.Error:
+        db.rollback()
+        logger.warning("Could not set session_replication_role to 'replica', import might be slow")
+
+    try:
+        for member in tar:
+            if not member.name.startswith('mbdump/'):
+                continue
+            name = member.name.split('/')[1].replace('_sanitised', '')
+            schema, table = parse_name(config, name)
+            fulltable = fqn(schema, table)
+            if schema in ignored_schemas:
+                logger.info("Ignoring %s", name)
+                continue
+            if table in ignored_tables:
+                logger.info("Ignoring %s", name)
+                continue
+            if not check_table_exists(db, schema, table):
+                logger.info("Skipping %s (table %s does not exist)", name, fulltable)
+                continue
+            cursor.execute("SELECT 1 FROM %s LIMIT 1" % fulltable)
+            if cursor.fetchone():
+                logger.info("Skipping %s (table %s already contains data)", name, fulltable)
+                continue
+            try:
+                cursor.execute("ALTER TABLE %s DISABLE TRIGGER ALL" % fulltable)
+            except psycopg2.Error:
+                db.rollback()
+            logger.info("Loading %s to %s", name, fulltable)
+            with tqdm(total=member.size, unit='B', unit_scale=True, desc=name, leave=False) as pbar:
+                fileobj = tar.extractfile(member)
+                if fileobj is None:
+                    continue
+                cursor.copy_expert('COPY {} FROM STDIN'.format(fulltable), TqdmFileReader(fileobj, pbar))
+            try:
+                cursor.execute("ALTER TABLE %s ENABLE TRIGGER ALL" % fulltable)
+            except psycopg2.Error:
+                db.rollback()
+            db.commit()
+    finally:
+        try:
+            cursor.execute("SET session_replication_role = 'origin'")
+        except psycopg2.Error:
+            db.rollback()
         db.commit()
 
 
 def mbslave_import_main(config, args):
     db = connect_db(config, superuser=True, set_search_path=True)
 
+    work_dir = args.work_dir or os.getcwd()
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+
     for source in args.sources:
-        with ExitStack() as exit_stack:
-            if source.startswith('http://') or source.startswith('https://'):
-                fileobj = exit_stack.enter_context(urlopen(source))
-            else:
-                fileobj = exit_stack.enter_context(open(source, 'rb'))
-            load_tar(source, fileobj, db, config, config.schemas.ignored_schemas, config.tables.ignored_tables)
+        if source.startswith('http://') or source.startswith('https://'):
+            filename = source.split('/')[-1]
+            dest_path = os.path.join(work_dir, filename)
+            download_url(source, dest_path)
+            with open(dest_path, 'rb') as fileobj:
+                load_tar(source, fileobj, db, config, config.schemas.ignored_schemas, config.tables.ignored_tables)
+        else:
+            with open(source, 'rb') as fileobj:
+                load_tar(source, fileobj, db, config, config.schemas.ignored_schemas, config.tables.ignored_tables)
 
 
 def mbslave_auto_import_main(config: Config, args) -> None:
@@ -289,7 +376,11 @@ def mbslave_auto_import_main(config: Config, args) -> None:
 
     logger.info("Latest dump is %s", latest)
 
-    db = connect_db(config)
+    db = connect_db(config, superuser=True)
+
+    work_dir = args.work_dir or os.getcwd()
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
 
     files = [
         'mbdump.tar.bz2',
@@ -300,7 +391,9 @@ def mbslave_auto_import_main(config: Config, args) -> None:
     ]
     for file in files:
         url = urljoin(base_url, latest + '/' + file)
-        with urlopen(url) as fileobj:
+        dest_path = os.path.join(work_dir, file)
+        download_url(url, dest_path)
+        with open(dest_path, 'rb') as fileobj:
             load_tar(url, fileobj, db, config, config.schemas.ignored_schemas, config.tables.ignored_tables)
 
 
@@ -573,15 +666,19 @@ def create_user(config: Config) -> None:
     db = connect_db(config, superuser=True, no_db=True)
     db.autocommit = True
     cursor = db.cursor()
-    cursor.execute(f"CREATE USER {config.database.user} PASSWORD %s", (config.database.password,))
+    cursor.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (config.database.user,))
+    if not cursor.fetchone():
+        cursor.execute(f"CREATE USER {config.database.user} PASSWORD %s", (config.database.password,))
 
 
 def create_database(config: Config) -> None:
     db = connect_db(config, superuser=True, no_db=True)
     db.autocommit = True
     cursor = db.cursor()
-    cursor.execute(f"CREATE DATABASE {config.database.name} WITH OWNER {config.database.user}")
-    cursor.execute(f"ALTER DATABASE {config.database.name} SET timezone TO 'UTC'")
+    cursor.execute("SELECT 1 FROM pg_database WHERE datname=%s", (config.database.name,))
+    if not cursor.fetchone():
+        cursor.execute(f"CREATE DATABASE {config.database.name} WITH OWNER {config.database.user}")
+        cursor.execute(f"ALTER DATABASE {config.database.name} SET timezone TO 'UTC'")
 
 
 def create_schemas(config: Config) -> None:
@@ -621,6 +718,9 @@ def mbslave_init_main(config: Config, args: argparse.Namespace) -> None:
 
     if args.create_database:
         create_database(config)
+
+    if args.only_db:
+        return
 
     create_schemas(config)
 
@@ -753,11 +853,13 @@ def main():
     parser_init = subparsers.add_parser('init')
     parser_init.add_argument('--create-user', action='store_true')
     parser_init.add_argument('--create-database', action='store_true')
+    parser_init.add_argument('--only-db', action='store_true')
     parser_init.add_argument('--empty', action='store_true')
-    parser_init.set_defaults(func=mbslave_init_main, create_user=False, create_database=False, empty=False)
+    parser_init.set_defaults(func=mbslave_init_main, create_user=False, create_database=False, only_db=False, empty=False)
 
     parser_import = subparsers.add_parser('import')
     parser_import.add_argument('sources', metavar='FILE_OR_URL', nargs='+', help='tar.bz2 file to import')
+    parser_import.add_argument('--work-dir', metavar='DIR', help='directory to store downloaded files')
     parser_import.set_defaults(func=mbslave_import_main)
 
     parser_auto_import = subparsers.add_parser('auto-import')
@@ -768,6 +870,7 @@ def main():
         help='URL of the data dump mirror',
         default='http://ftp.musicbrainz.org/pub/musicbrainz/data/fullexport/',
     )
+    parser_auto_import.add_argument('--work-dir', metavar='DIR', help='directory to store downloaded files')
     parser_auto_import.set_defaults(func=mbslave_auto_import_main)
 
     parser_sync = subparsers.add_parser('sync')
