@@ -686,7 +686,7 @@ def mbslave_init_main(config: Config, args: argparse.Namespace) -> None:
 
         # replication
         ('musicbrainz', 'ReplicationSetup.sql'),
-        ('dbmirror2', 'dbmirror2/ReplicationSetup.sql'),
+        ('dbmirror2', 'dbmirror2/dbmirror2.sql'),
 
     ]
 
