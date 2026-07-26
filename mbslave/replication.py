@@ -290,7 +290,7 @@ def download_url(url: str, dest_path: str) -> None:
                 if not chunk:
                     break
                 f.write(chunk)
-                pbar.update(len(chunk))
+                pbar.update(len(chunk))  # type: ignore[attr-defined]
 
 
 def load_tar(source: str, fileobj: IO[bytes], db, config, ignored_schemas, ignored_tables):
