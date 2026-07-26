@@ -14,7 +14,7 @@ from urllib.error import HTTPError
 import tempfile
 import shutil
 import subprocess
-from typing import List, Optional, Iterable
+from typing import IO, List, Optional, Iterable
 import configparser as ConfigParser
 from contextlib import ExitStack
 
@@ -266,8 +266,8 @@ def download_url(url: str, dest_path: str) -> None:
         if e.code == 416:  # Range Not Satisfiable
             # Check if the file is already complete
             with urlopen(url) as r:
-                total_size = int(r.info().get('Content-Length', 0))
-                if resume_size >= total_size:
+                existing_total_size = int(r.info().get('Content-Length', 0))
+                if resume_size >= existing_total_size:
                     logger.info("File %s already downloaded", dest_path)
                     return
             raise
@@ -290,10 +290,10 @@ def download_url(url: str, dest_path: str) -> None:
                 if not chunk:
                     break
                 f.write(chunk)
-                pbar.update(len(chunk))
+                pbar.update(len(chunk))  # type: ignore[attr-defined]
 
 
-def load_tar(source: str, fileobj: BytesIO, db, config, ignored_schemas, ignored_tables):
+def load_tar(source: str, fileobj: IO[bytes], db, config, ignored_schemas, ignored_tables):
     logger.info("Importing data from %s", source)
     tar = tarfile.open(fileobj=fileobj, mode='r|*')
     cursor = db.cursor()
@@ -329,10 +329,10 @@ def load_tar(source: str, fileobj: BytesIO, db, config, ignored_schemas, ignored
                 db.rollback()
             logger.info("Loading %s to %s", name, fulltable)
             with tqdm(total=member.size, unit='B', unit_scale=True, desc=name, leave=False) as pbar:
-                fileobj = tar.extractfile(member)
-                if fileobj is None:
+                member_fileobj = tar.extractfile(member)
+                if member_fileobj is None:
                     continue
-                cursor.copy_expert('COPY {} FROM STDIN'.format(fulltable), TqdmFileReader(fileobj, pbar))
+                cursor.copy_expert('COPY {} FROM STDIN'.format(fulltable), TqdmFileReader(member_fileobj, pbar))
             try:
                 cursor.execute("ALTER TABLE %s ENABLE TRIGGER ALL" % fulltable)
             except psycopg2.Error:
@@ -786,7 +786,7 @@ def mbslave_init_main(config: Config, args: argparse.Namespace) -> None:
 
         # replication
         ('musicbrainz', 'ReplicationSetup.sql'),
-        ('dbmirror2', 'dbmirror2/ReplicationSetup.sql'),
+        ('dbmirror2', 'dbmirror2/dbmirror2.sql'),
 
     ]
 
