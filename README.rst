@@ -8,7 +8,7 @@ MusicBrainz Database Mirror
     :target: https://badge.fury.io/py/mbslave
 
 This repository now contains a collection of scripts for managing a
-replica of the MusicBrainz database. 
+replica of the MusicBrainz database.
 
 The main motivation for these scripts is to be able to customize
 your database. If you don't need such customizations, it might be
@@ -35,7 +35,7 @@ There are two ways to configure the application.
 
         export MBSLAVE_CONFIG=/usr/local/etc/mbslave.conf
 
-2. Alternativelly, you can use using environment variables::
+2. Alternatively, you can use environment variables::
 
         export MBSLAVE_DB_HOST=127.0.0.1
         export MBSLAVE_DB_PORT=5432
@@ -44,6 +44,14 @@ There are two ways to configure the application.
         export MBSLAVE_DB_PASSWORD=XXX
         export MBSLAVE_DB_ADMIN_USER=postgres
         export MBSLAVE_DB_ADMIN_PASSWORD=XXX
+
+Be aware, that configuring a different value for `db.user` or `schemas.musicbrainz` might require to configure a
+custom `search_path` for the user (or database): By default, postgres sets the search_path to `"$user", public`.
+If both is `musicbrainz` everything works, if they differ, you might run into errors when running `mbslave sync` as
+triggers can't lookup functions properly. One way to solve this is to set the search path for your custom user to the
+schema configured for musicbrainz::
+
+  ALTER USER myuser SET search_path TO musicbrainz, public;
 
 Database Setup
 ==============
@@ -65,7 +73,7 @@ you are doing.
 Database Replication
 ====================
 
-You can also keep the database up-to-date by applying incrementa changes.
+You can also keep the database up-to-date by applying incremental changes.
 
 You need get an API token from the `MetaBrainz website <https://metabrainz.org/supporters/account-type>`__ and you
 need to either add it to `mbslave.conf` or set the ``MBSLAVE_MUSICBRAINZ_TOKEN`` environment variable.
@@ -80,6 +88,22 @@ Schema Upgrade
 When the MusicBrainz database schema changes, the replication will stop working.
 This is usually announced on the `MusicBrainz blog <http://blog.musicbrainz.org/>`__.
 When it happens, you need to upgrade the database.
+
+Release 2026-05-11 (31)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the upgrade scripts::
+
+    mbslave psql -f updates/schema-change/31.all.sql
+    echo 'UPDATE replication_control SET current_schema_sequence = 31;' | mbslave psql
+
+Release 2025-05-19 (30)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the upgrade scripts::
+
+    mbslave psql -f updates/schema-change/30.all.sql
+    echo 'UPDATE replication_control SET current_schema_sequence = 30;' | mbslave psql
 
 Release 2024-05-13 (29)
 ~~~~~~~~~~~~~~~~~~~~~~~
