@@ -1,0 +1,49 @@
+FROM postgres:16
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    postgresql-server-dev-16 \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /opt/mbslave-venv
+ENV PATH="/opt/mbslave-venv/bin:$PATH"
+
+WORKDIR /usr/src/app
+COPY . .
+
+# Install mbslave and its dependencies
+RUN pip install .
+
+ENV POSTGRES_DB=musicbrainz
+ENV POSTGRES_USER=musicbrainz
+ENV POSTGRES_PASSWORD=musicbrainz
+
+# Create a default config file for mbslave
+RUN cat <<EOF > /etc/mbslave.conf
+[database]
+host=/var/run/postgresql
+port=5432
+name=musicbrainz
+user=musicbrainz
+password=musicbrainz
+admin_user=musicbrainz
+EOF
+
+# Add initialization script
+COPY <<-'INIT_DB' /docker-entrypoint-initdb.d/01-init-mbslave.sh
+#!/bin/bash
+set -e
+
+# mbslave init expects to be able to connect to the database
+# When scripts in /docker-entrypoint-initdb.d/ are run, the server is running
+# and accepting connections.
+# We use PGUSER=postgres to connect as the superuser that exists during init.
+
+PGUSER=postgres MBSLAVE_CONFIG=/etc/mbslave.conf mbslave init --empty
+INIT_DB
+
+RUN chmod +x /docker-entrypoint-initdb.d/01-init-mbslave.sh

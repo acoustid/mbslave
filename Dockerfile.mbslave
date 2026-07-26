@@ -1,7 +1,7 @@
 FROM python:3.10 AS build
 
 RUN python3 -m venv /opt/poetry && \
-    /opt/poetry/bin/pip install poetry && \
+    /opt/poetry/bin/pip install poetry==1.8.5 && \
     ln -s /opt/poetry/bin/poetry /usr/local/bin/ && \
     poetry --version
 
@@ -18,5 +18,7 @@ RUN apt-get update && \
 COPY --from=build /tmp/mbdata/dist/ /tmp/dist/
 RUN python -m pip install "$(ls -1 /tmp/dist/*.whl)[replication,models]" && rm -rf /tmp/dist/
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["mbslave", "sync", "-r"]
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "docker-entrypoint.sh"]

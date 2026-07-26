@@ -1,3 +1,12 @@
+Version 30.0.0
+==============
+
+- Massive optimization of initial import by temporarily disabling triggers and constraints (MBS-13492).
+- Updated to MusicBrainz schema 30.
+- Added progress bars (`tqdm`) during data import.
+- Improved Docker environment with `docker-compose.dev.yml` and a more robust entrypoint script.
+- Updated dependencies.
+
 Version 29.1.0
 ==============
 
