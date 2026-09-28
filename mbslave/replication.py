@@ -432,6 +432,27 @@ class ReplicationHook(object):
         pass
 
 
+def sorted_transactions(transactions):
+    """Transaction groups in the order they should be replayed.
+
+    A transaction is replayed after every transaction that committed before it,
+    and the seqid of its last statement is the closest thing the packet carries
+    to a commit time. This is the rule MusicBrainz replays with -- see
+    ``ORDER BY max(seqid)`` in admin/replication/ProcessReplicationChanges.
+
+    Ordering by xid instead is wrong, and quietly so. Postgres assigns an xid at
+    a transaction's first write rather than at its commit, so two transactions
+    that interleave can have their xid order disagree with the order their
+    statements were actually written in. Replaying by xid then produces an order
+    that never happened on the master: in packet 189339 it put an INSERT before
+    the DELETE that had made room for it, and the primary key rejected it.
+
+    The statements within a transaction are already ordered by seqid by the
+    caller, which is what the sort on each group's statements does.
+    """
+    return sorted(transactions.items(), key=lambda item: max(s[0] for s in item[1]))
+
+
 class PacketImporter(object):
 
     def __init__(self, db, config, ignored_schemas, ignored_tables, replication_seq, hook):
@@ -479,8 +500,7 @@ class PacketImporter(object):
             transaction = self._transactions.setdefault(xid, [])
             transaction.append((id, schema, table, type, keys, new_values))
             row = cursor.fetchone()
-        for xid in sorted(self._transactions.keys()):
-            transaction = self._transactions[xid]
+        for xid, transaction in sorted_transactions(self._transactions):
             # print ' - Running transaction', xid
             # print 'BEGIN; --', xid
             for id, schema, table, type, keys, values in sorted(transaction):
