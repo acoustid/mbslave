@@ -1,3 +1,9 @@
+Version 32.0.0
+==============
+
+- Schema change 32.
+  https://blog.metabrainz.org/2026/09/21/musicbrainz-server-update-2026-09-21/
+
 Version 31.0.0
 ==============
 
