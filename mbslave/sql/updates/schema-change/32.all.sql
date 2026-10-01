@@ -16,8 +16,8 @@ DROP FUNCTION IF EXISTS check_editor_name();
 DROP TABLE IF EXISTS old_editor_name CASCADE;
 
 --------------------------------------------------------------------------------
-SELECT '20260602-new-sitemaps-indexes.sql';
-
+/* disabled sitemaps schema related updates, as this seems not to be installed with mbdata
+ SELECT '20260602-new-sitemaps-indexes.sql';
 
 CREATE INDEX artist_lastmod_idx_id ON sitemaps.artist_lastmod (id);
 CREATE INDEX label_lastmod_idx_id ON sitemaps.label_lastmod (id);
@@ -26,7 +26,7 @@ CREATE INDEX recording_lastmod_idx_id ON sitemaps.recording_lastmod (id);
 CREATE INDEX release_lastmod_idx_id ON sitemaps.release_lastmod (id);
 CREATE INDEX release_group_lastmod_idx_id ON sitemaps.release_group_lastmod (id);
 CREATE INDEX work_lastmod_idx_id ON sitemaps.work_lastmod (id);
-
+*/
 --------------------------------------------------------------------------------
 SELECT '20260623-mbs-12379.sql';
 
